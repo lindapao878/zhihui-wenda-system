@@ -1,0 +1,29 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-dotenv>=1.0.1
+pydantic>=2.7.0
+python-multipart>=0.0.9
+
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-openai>=0.1.20
+langchain-text-splitters>=0.2.0
+langgraph>=0.2.0
+
+pymilvus>=2.4.0
+pymongo>=4.7.0
+minio>=7.2.0
+FlagEmbedding>=1.2.0
+
+openai>=1.40.0,<3
+numpy>=1.26.0
+scipy>=1.12.0
+
+# MCP client used by the web search node (openai-agents 0.20 keeps openai<3 for mineru compatibility).
+openai-agents==0.20.0
+# DashScope /mcp Streamable HTTP works with mcp 1.x; mcp 2/httpx2 gets HTTP 500.
+mcp==1.19.0
+httpx-sse==0.4.3
+
+python-docx>=1.2.0
+loguru>=0.7.3

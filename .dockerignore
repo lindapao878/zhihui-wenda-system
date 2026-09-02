@@ -1,0 +1,27 @@
+.venv/
+model_cache/
+volumes/
+logs/
+temp_data/
+temp_pdf_test*/
+__pycache__/
+*.pyc
+*.log
+.env
+.git/
+.gitignore
+# 本地资料、课件与临时脚本不进入镜像构建
+2.资料/
+3.其他资料/
+images/
+*_掌柜智库*.md
+一个很牛的AGENTS.md
+build_progress.py
+check_chengdu.py
+check_chunks.py
+milvus_batch_query.py
+batch_import_selected.py
+batch_import_unified.py
+sample.md
+*.err
+*.out
