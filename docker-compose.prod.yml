@@ -1,0 +1,74 @@
+# Production overrides for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile cpu up -d
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  etcd:
+    ports: ["127.0.0.1:2379:2379"]
+    restart: unless-stopped
+    logging: *logging
+
+  milvus-minio:
+    ports: ["127.0.0.1:19000:9000"]
+    restart: unless-stopped
+    logging: *logging
+
+  milvus:
+    ports: ["127.0.0.1:19530:19530", "127.0.0.1:9091:9091"]
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mongo:
+    ports: ["127.0.0.1:27017:27017"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - ./volumes/mongo:/data/db
+      - ./deploy/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+
+  minio:
+    ports: ["127.0.0.1:9000:9000", "127.0.0.1:9001:9001"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+
+  import-api-cpu:
+    ports: ["127.0.0.1:8000:8000"]
+    restart: unless-stopped
+    logging: *logging
+    mem_limit: 2g
+    depends_on:
+      milvus:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  query-api-cpu:
+    ports: ["127.0.0.1:8001:8001"]
+    restart: unless-stopped
+    logging: *logging
+    mem_limit: 2g
+    depends_on:
+      milvus:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      minio:
+        condition: service_healthy

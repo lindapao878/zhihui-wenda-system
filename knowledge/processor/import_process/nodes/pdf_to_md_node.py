@@ -52,7 +52,7 @@ class PdfToMdNode(BaseNode):
 
     def _execute_mineru(self, import_file_path: Path, file_dir_path: Path) -> int:
         cmd = [
-            str(Path(sys.executable).parent / "mineru.exe"),
+            os.getenv("MINERU_BIN", str(Path(sys.executable).parent / "mineru.exe")),
             "-p",
             str(import_file_path),
             "-o",

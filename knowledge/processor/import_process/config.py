@@ -44,6 +44,10 @@ class ImportConfig:
     minio_bucket: str = field(default_factory=lambda: os.getenv("MINIO_BUCKET_NAME", "knowledge-base"))
     minio_secure: bool = False
 
+    minio_public_base_url: str = field(
+        default_factory=lambda: os.getenv("MINIO_PUBLIC_BASE_URL", "")
+    )
+
     embedding_dim: int = field(default_factory=lambda: int(os.getenv("EMBEDDING_DIM", "1024")))
     embedding_batch_size: int = 8
 
@@ -54,6 +58,8 @@ class ImportConfig:
         return cls()
 
     def get_minio_base_url(self) -> str:
+        if self.minio_public_base_url:
+            return self.minio_public_base_url.rstrip("/")
         protocol = "https://" if self.minio_secure else "http://"
         return protocol + self.minio_endpoint
 

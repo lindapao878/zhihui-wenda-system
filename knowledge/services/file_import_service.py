@@ -72,10 +72,10 @@ class ImportFileService:
         try:
             final_state = kb_import_graph_app.invoke(state)
             logger.info("导入任务完成: {}, 切片数={}", task_id, len(final_state.get("chunks", [])))
+            query_cache.clear()
+            logger.info("导入成功，已清空查询缓存: {}", task_id)
             update_task_status(task_id, TASK_STATUS_COMPLETED)
         except Exception as exc:
-            query_cache.clear()
-            logger.info("导入完成，已清空查询缓存: {}", task_id)
             logger.exception("导入任务失败: {}", task_id)
             update_task_status(task_id, TASK_STATUS_FAILED)
             set_task_result(task_id, "error", str(exc))

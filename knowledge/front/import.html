@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="qa-base-url" content="" />
   <title>智慧问答系统 - 文件导入</title>
   <style>
     :root{
@@ -331,7 +332,9 @@
     function escapeHtml(s){return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}
     function formatSize(b){return b<1024?b+" B":b<1048576?(b/1024).toFixed(1)+" KB":(b/1048576).toFixed(2)+" MB"}
     // chat page served on port 8001
-    document.getElementById("gotoChat").href = location.protocol + "//" + location.hostname + ":8001/chat.html";
+    const qaMeta = document.querySelector('meta[name="qa-base-url"]');
+    const qaBase = qaMeta?.content || (location.protocol + "//" + location.hostname + ":8001");
+    document.getElementById("gotoChat").href = qaBase + "/chat.html";
   </script>
 </body>
 </html>

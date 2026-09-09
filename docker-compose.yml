@@ -27,6 +27,8 @@ services:
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     ports:
       - "2379:2379"
+    volumes:
+      - ./volumes/etcd:/etcd
 
   milvus-minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
@@ -57,6 +59,11 @@ services:
     image: mongo:7.0
     ports:
       - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     volumes:
       - ./volumes/mongo:/data/db
 
@@ -69,6 +76,11 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     volumes:
       - ./volumes/minio:/data
 

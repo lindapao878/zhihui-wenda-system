@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from knowledge.core.deps import get_query_service
 from knowledge.core.paths import get_front_page_dir
 from knowledge.core.security import get_allowed_origins, verify_api_key
+from knowledge.utils.query_cache import query_cache
 from knowledge.schema.query_schema import QueryRequest, QueryResponse, StreamSubmitResponse
 from knowledge.services.query_service import QueryService
 from knowledge.utils.health_util import readiness_check
@@ -73,7 +74,11 @@ def register_routes(app: FastAPI):
         return service.get_task_info(task_id)
 
     @app.get("/stream/{task_id}")
-    async def stream(task_id: str, request: Request):
+    async def stream(
+        task_id: str,
+        request: Request,
+        _auth: None = Depends(verify_api_key),
+    ):
         return StreamingResponse(sse_generator(task_id, request), media_type="text/event-stream")
 
     @app.get("/history/{session_id}")
@@ -96,6 +101,16 @@ def register_routes(app: FastAPI):
         return {"message": "History cleared", "deleted_count": count}
 
 
+def _register_admin_routes(app: FastAPI):
+    if os.getenv("APP_ADMIN_ENABLE", "").lower() not in ("1", "true", "yes"):
+        return
+    @app.post("/admin/cache-clear")
+    async def admin_cache_clear():
+        query_cache.clear()
+        logger.info("管理员清空了查询缓存")
+        return {"cleared": True}
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="Query Service", description="知识库查询服务")
     app.add_middleware(
@@ -111,6 +126,7 @@ def create_app() -> FastAPI:
         app.mount("/front", StaticFiles(directory=front_page_dir), name="front")
 
     register_routes(app)
+    _register_admin_routes(app)
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):

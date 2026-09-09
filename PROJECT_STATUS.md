@@ -1,6 +1,6 @@
 # 智慧问答系统 PROJECT_STATUS
 
-> 最后更新: 2026-09-02 (轮次38)
+> 最后更新: 2026-09-10 (轮次39)
 > 用途: 供协调者快速恢复上下文，避免重复扫描项目
 > 日志同步规则: 每完成一项工作就更新本文件，记录做了什么、遇到的问题及解决办法
 
@@ -158,6 +158,8 @@
 | 36 | README 详细化 + Dockerfile 修正 | 重写 README：目录结构/技术栈/配置说明/API 文档/鉴权与 CORS/健康探针/任务持久化/批量导入/部署/日志运维/已知边界，修正测试数 40→53 与查询任务接口（/status/{task_id}）；移除 Dockerfile 中无效的 COPY prompts/（prompts 实际在 knowledge/prompts 下）；53 例测试全绿 | README.md / Dockerfile / PROJECT_STATUS.md |
 | 37 | 开源化修正 | 移除 README“私有项目，未授权不得使用”，改为 MIT License 声明；新增 LICENSE(MIT)；README 许可证段链接到 LICENSE | README.md / LICENSE / PROJECT_STATUS.md |
 | 38 | 项目更名为智慧问答系统 | 全局替换掌柜智库→智慧问答系统、zhanguanzhiku→zhihui-wenda-system；本地资料/课件/临时脚本明确不入仓库；已迁移至新公开仓库 zhihui-wenda-system；旧仓库 lindapao878/- 因令牌缺少删除权限，待手动删除 | AGENTS.md / README.md / DEPLOY.md / PROJECT_STATUS.md / docker-compose.yml / 前端页面与代码注释 / .gitignore / .dockerignore |
+
+| 39 | 上线部署准备 | 制定香港VPS+AutoDL混合部署方案并完成全部代码改造：修正导入成功后不清缓存的bug、补全stream端点鉴权(verify_api_key)、MinerU跨平台支持(MINERU_BIN)、MinIO公网图链(MINIO_PUBLIC_BASE_URL)、前端跳转改为meta标签可配(qa-base-url)、新增内部缓存清理接口(POST /admin/cache-clear,APP_ADMIN_ENABLE控制)、etcd持久化卷(volumes/etcd:/etcd)、生产compose覆盖层(docker-compose.prod.yml:端口绑定127.0.0.1+restart+healthcheck依赖+日志轮转)、MongoDB专用用户初始化脚本(deploy/mongo-init.js)、Nginx四站点配置模板(qa/import/img/admin)、备份脚本(deploy/scripts/backup.sh:每日停服tar+每6h在线mongodump)、Docker健康检查(Milvus /healthz+Mongo ping+MinIO /health/live)、pip清华源镜像(.dockerignore新增) | file_import_service.py / query_router.py / pdf_to_md_node.py / config.py / import.html / .env / docker-compose.yml / Dockerfile / .dockerignore / docker-compose.prod.yml / .env.prod / deploy/
 
 ---
 
