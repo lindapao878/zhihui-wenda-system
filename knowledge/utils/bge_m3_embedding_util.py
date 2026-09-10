@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 from knowledge.utils.logger_util import logger
+import torch
 
 load_dotenv()
 
@@ -67,6 +68,24 @@ def get_beg_m3_embedding_model():
         use_fp16 = os.getenv("BGE_FP16", "False").lower() in {"1", "true", "yes", "on"}
 
         model = BGEM3FlagModel(model_name, use_fp16=use_fp16, device=device)
+
+        # 手动注入 sparse_linear / colbert_linear 权重
+        # BGEM3FlagModel 加载后这两个层是随机初始化的，需从 .pt 文件读取
+        if os.path.isdir(model_name):
+            for layer_name in ["sparse_linear", "colbert_linear"]:
+                pt_path = os.path.join(model_name, f"{layer_name}.pt")
+                if os.path.exists(pt_path):
+                    state_dict = torch.load(pt_path, map_location=device, weights_only=True)
+                    target = getattr(model, layer_name, None)
+                    if target is None:
+                        target = getattr(model.model, layer_name, None)
+                    if target is not None:
+                        target.load_state_dict(state_dict)
+                        logger.info("已注入 {} 权重: {}", layer_name, pt_path)
+                    else:
+                        logger.warning("未找到 {} 层，跳过权重注入", layer_name)
+                else:
+                    logger.warning("{} 不存在，{} 将使用随机权重", pt_path, layer_name)
         _bge_m3_model = _BgeM3EmbeddingWrapper(model)
     except Exception as exc:
         logger.error("加载 BGE-M3 模型失败: {}", exc)
