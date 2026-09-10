@@ -25,9 +25,16 @@ class _BgeM3EmbeddingWrapper:
         data = []
         tokenizer = getattr(self._model, 'tokenizer', None)
 
+        n_docs = len(lexical_weights)
+
         for weights in lexical_weights:
             for token, weight in weights.items():
-                token_id = tokenizer.convert_tokens_to_ids(token) if tokenizer is not None else -1
+                if isinstance(token, int):
+                    token_id = token
+                elif isinstance(token, str) and tokenizer is not None:
+                    token_id = tokenizer.convert_tokens_to_ids(token)
+                else:
+                    token_id = -1
                 if token_id in (None, -1):
                     continue
                 indices.append(int(token_id))
@@ -35,8 +42,9 @@ class _BgeM3EmbeddingWrapper:
             indptr.append(len(indices))
 
         if not data:
-            return sparse.csr_matrix((0, 1), dtype='float32')
-        return sparse.csr_matrix((data, indices, indptr), shape=(len(lexical_weights), max(indices) + 1), dtype='float32')
+            logger.warning("BGE-M3 稀疏向量为空，文档数: {}", n_docs)
+            return sparse.csr_matrix((n_docs, 1), dtype='float32')
+        return sparse.csr_matrix((data, indices, indptr), shape=(n_docs, max(indices) + 1), dtype='float32')
 
     def encode_documents(self, documents):
         result = self._model.encode(documents, return_dense=True, return_sparse=True, return_colbert_vecs=False)

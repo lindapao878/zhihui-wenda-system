@@ -85,6 +85,8 @@ class ItemNameRecognitionNode(BaseNode):
             weights = embedding_result["sparse"].data[start_index:end_index].tolist()
             token_ids = embedding_result["sparse"].indices[start_index:end_index].tolist()
             sparse = dict(zip(token_ids, weights))
+            if not sparse:
+                logger.warning("商品名 '{}' 的稀疏向量为空，仅使用稠密向量", item_name)
             return dense, sparse
         except Exception as exc:
             raise EmbeddingError(f"嵌入商品名:{item_name}失败,原因是：{exc}", self.name)
