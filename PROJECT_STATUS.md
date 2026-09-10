@@ -1,6 +1,6 @@
 # 智慧问答系统 PROJECT_STATUS
 
-> 最后更新: 2026-09-10 (轮次39)
+> 最后更新: 2026-09-11 (轮次40)
 > 用途: 供协调者快速恢复上下文，避免重复扫描项目
 > 日志同步规则: 每完成一项工作就更新本文件，记录做了什么、遇到的问题及解决办法
 
@@ -157,7 +157,11 @@
 | 35 | 修复 chat.html JS 语法错误 + 导入页跳转聊天 | submitQuery 的 JSON.stringify 多了一个右括号，整个脚本解析失败导致聊天页按钮失效、连接状态停在“未连接”；mdToHtml 替换为精简版，node --check 通过；import.html 顶部“前往问答”改为指向 8001/chat.html，并清除 </html> 后残留代码；8000/8001 /health 均 200 | knowledge/front/chat.html / knowledge/front/import.html / PROJECT_STATUS.md |
 | 36 | README 详细化 + Dockerfile 修正 | 重写 README：目录结构/技术栈/配置说明/API 文档/鉴权与 CORS/健康探针/任务持久化/批量导入/部署/日志运维/已知边界，修正测试数 40→53 与查询任务接口（/status/{task_id}）；移除 Dockerfile 中无效的 COPY prompts/（prompts 实际在 knowledge/prompts 下）；53 例测试全绿 | README.md / Dockerfile / PROJECT_STATUS.md |
 | 37 | 开源化修正 | 移除 README“私有项目，未授权不得使用”，改为 MIT License 声明；新增 LICENSE(MIT)；README 许可证段链接到 LICENSE | README.md / LICENSE / PROJECT_STATUS.md |
-| 38 | 项目更名为智慧问答系统 | 全局替换掌柜智库→智慧问答系统、zhanguanzhiku→zhihui-wenda-system；本地资料/课件/临时脚本明确不入仓库；已迁移至新公开仓库 zhihui-wenda-system；旧仓库 lindapao878/- 因令牌缺少删除权限，待手动删除 | AGENTS.md / README.md / DEPLOY.md / PROJECT_STATUS.md / docker-compose.yml / 前端页面与代码注释 / .gitignore / .dockerignore |
+| 38 | 项目更名为智慧问答系统 |
+
+| 39 | 上线部署准备 | 制定香港VPS+AutoDL混合部署方案，完成代码安全修复和基础设施配置(commit 272afb7) | file_import_service.py / query_router.py / config.py / import.html / docker-compose.yml / Dockerfile / .dockerignore / docker-compose.prod.yml / .env.prod / deploy/ |
+
+| 40 | VPS生产部署 + 管理入口安全加固 | 椰子云香港VPS(8c16g 200GB)部署全部7个Docker容器，端口冲突!reset解决，中间件绑定127.0.0.1；Nginx四站点+Let's Encrypt SSL(至2026-12-09)；Tailscale连接VPS(100.115.189.2)与AutoDL(100.69.250.41)；推进import.lyq666.com从公网迁至Tailscale内网，待DNS-01证书拆分 | Nginx/Tailscale/DNS/证书 | 全局替换掌柜智库→智慧问答系统、zhanguanzhiku→zhihui-wenda-system；本地资料/课件/临时脚本明确不入仓库；已迁移至新公开仓库 zhihui-wenda-system；旧仓库 lindapao878/- 因令牌缺少删除权限，待手动删除 | AGENTS.md / README.md / DEPLOY.md / PROJECT_STATUS.md / docker-compose.yml / 前端页面与代码注释 / .gitignore / .dockerignore |
 
 | 39 | 上线部署准备 | 制定香港VPS+AutoDL混合部署方案并完成全部代码改造：修正导入成功后不清缓存的bug、补全stream端点鉴权(verify_api_key)、MinerU跨平台支持(MINERU_BIN)、MinIO公网图链(MINIO_PUBLIC_BASE_URL)、前端跳转改为meta标签可配(qa-base-url)、新增内部缓存清理接口(POST /admin/cache-clear,APP_ADMIN_ENABLE控制)、etcd持久化卷(volumes/etcd:/etcd)、生产compose覆盖层(docker-compose.prod.yml:端口绑定127.0.0.1+restart+healthcheck依赖+日志轮转)、MongoDB专用用户初始化脚本(deploy/mongo-init.js)、Nginx四站点配置模板(qa/import/img/admin)、备份脚本(deploy/scripts/backup.sh:每日停服tar+每6h在线mongodump)、Docker健康检查(Milvus /healthz+Mongo ping+MinIO /health/live)、pip清华源镜像(.dockerignore新增) | file_import_service.py / query_router.py / pdf_to_md_node.py / config.py / import.html / .env / docker-compose.yml / Dockerfile / .dockerignore / docker-compose.prod.yml / .env.prod / deploy/
 
@@ -174,8 +178,64 @@
 6. ✅ **VL_MODEL 已配置生效** — Qwen/Qwen3-VL-32B-Instruct，含图文档已重新导入并验证图片展示
 7. ✅ **检索排序和答案质量调优** — 已完成(轮次29)，MILVUS_MIN_COSINE_SCORE 0.75->0.6、ITEM_NAME_MID_CONFIDENCE 0.6->0.7、实体检索仅商品确认后启用
 8. **最终批量导入** — 全部功能已完善，可触发
+9. **BGE-reranker-large 模型** — 本地scp上传中(2.8GB zip)
+10. **管理入口 Tailscale 迁移** — 待获取DNSPod API凭据后执行证书拆分+DNS修改
+11. **AutoDL 导入环境** — V100-32GB实例已租用，Tailscale已通，待装项目环境
 
 ---
+
+
+
+---
+
+## 六、部署状态 (截至 2026-09-11)
+
+### 服务器
+- 椰子云香港VPS，Ubuntu 22.04，8核16GB，公网IP 154.94.227.35，数据盘200GB挂载/data
+- Tailscale IP 100.115.189.2，设备名 ser714950277211
+- deploy用户，SSH密钥登录，禁用密码
+
+### 域名 DNS (腾讯云 DNSPod)
+- qa.lyq666.com → 154.94.227.35 (公网)
+- import.lyq666.com → 154.94.227.35 (公网，待迁至 100.115.189.2)
+- img.lyq666.com → 154.94.227.35 (公网)
+
+### Docker 容器 (全部 healthy)
+- etcd / milvus / mongo / minio / milvus-minio / query-api-cpu / import-api-cpu
+- 所有中间件端口绑定 127.0.0.1，仅 22/80/443 对外
+- MongoDB 业务用户 zhihui_user@kb001 认证正常
+
+### Nginx (4站点)
+- qa.lyq666.com:443 → 127.0.0.1:8001 (SSE流式正常)
+- import.lyq666.com:443 → 127.0.0.1:8000 (HTTP Basic Auth，待迁Tailscale)
+- img.lyq666.com:443 → 127.0.0.1:9000
+- admin:100.115.189.2:80 → 127.0.0.1:8001/admin/*
+
+### SSL
+- 一张 Let''s Encrypt HTTP-01 证书覆盖 qa+import+img，至 2026-12-09
+- 待拆分：qa+img 保留 HTTP-01，import 单独 DNS-01 证书
+
+### Tailscale
+- ACL allow-only，grants: AutoDL(100.69.250.41)→VPS(100.115.189.2) TCP 19530/27017/9000
+- VPS tailscale serve 暴露 19530/27017/9000
+- AutoDL V100-32GB 实例 Tailscale已通，环境待配
+
+### 模型
+- BGE-M3: /data/models/bge-m3/ ✅
+- BGE-reranker-large: /data/models/bge-reranker-large/ ❌ 上传中
+
+### 当前卡点
+1. BGE-reranker-large 未到位
+2. 待获取 DNSPod API 凭据执行证书拆分和 DNS 迁移
+3. Windows 管理设备未装 Tailscale
+4. AutoDL 环境未配置
+
+### 下一项任务
+1. BGE-reranker-large 上传完成 → 解压
+2. 获取 DNSPod API 凭据 → certbot-dns-dnspod → 拆分证书 → Nginx/DNS 修改
+3. Windows 装 Tailscale → ACL 更新 → 验证 https://import.lyq666.com
+4. AutoDL 装项目环境 + MinerU + BGE模型 → 跑通 PDF 导入
+5. 部署备份脚本 → 冒烟验证 → 正式上线
 
 ## 五、设计要点
 
