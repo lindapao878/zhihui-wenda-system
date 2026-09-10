@@ -258,3 +258,9 @@
 - **修复**：Dockerfile 中在 pip install -r requirements.txt 之前先安装 CPU 版 torch：RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu，后续 pip 不再拉取 CUDA 版
 - **清理**：执行 docker system prune -a -f、docker builder prune -f、pt clean 释放空间
 - **预防**：VPS 部署始终用 CPU 版 torch，GPU 版仅用于 AutoDL
+
+### sparse_linear/colbert_linear 权重注入 (2026-09-11)
+- **现象**：导入文档时 sparse_vector 为空，_to_csr 返回的 CSR 矩阵 data 长度为 0
+- **根因**：BGEM3FlagModel 加载后 model.model.sparse_linear 和 model.model.colbert_linear 是随机初始化的，ncode() 实际使用 inner 层，导致 lexical_weights 输出无效 token
+- **修复**：get_beg_m3_embedding_model 中从模型目录手动加载 sparse_linear.pt / colbert_linear.pt，注入到 model.model.xxx（inner 优先，外层独立存在时一并注入）
+- **关联修复**：此前 _to_csr 已兼容整数 token_id（BGE-M3 lexical_weights 实际返回 int 键而非 str）
