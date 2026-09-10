@@ -249,3 +249,12 @@
 - **JSON 回退**：invoke_llm_with_json_fallback 先试 json_object，400 时回退普通模式
 - **BGE-M3 包装器**：_BgeM3EmbeddingWrapper 将 lexical_weights 转为 CSR 稀疏矩阵
 - **embedding 内容**：导入侧 = item_name + "\n" + content；查询侧 = rewritten_query(+hy_doc)`n- **缓存失效**：导入完成后 query_cache.clear()，避免新文档入库后仍命中旧缓存`n- **Milvus 转义**：所有 filter 构造处必须用 escape_milvus_string（轮次27/31 补齐 6 处）`n- **日志统一**：全部模块使用 loguru via knowledge.utils.logger_util，不再用 logging.getLogger
+
+## 七、部署踩坑
+
+### Docker 构建磁盘空间不足 (2026-09-11)
+- **现象**：VPS（系统盘 30G）上 docker compose build 失败，pip 安装 requirements.txt 时拉取大量 CUDA 包（nvidia-* 数 GB），系统盘剩余 5.3G 被撑爆，报 [Errno 28] No space left on device
+- **根因**：FlagEmbedding 依赖 torch，pip 默认拉取 CUDA 版 torch，连带 nvidia-cublas、nvidia-cuda-runtime 等大包
+- **修复**：Dockerfile 中在 pip install -r requirements.txt 之前先安装 CPU 版 torch：RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu，后续 pip 不再拉取 CUDA 版
+- **清理**：执行 docker system prune -a -f、docker builder prune -f、pt clean 释放空间
+- **预防**：VPS 部署始终用 CPU 版 torch，GPU 版仅用于 AutoDL
