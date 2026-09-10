@@ -76,14 +76,21 @@ def get_beg_m3_embedding_model():
                 pt_path = os.path.join(model_name, f"{layer_name}.pt")
                 if os.path.exists(pt_path):
                     state_dict = torch.load(pt_path, map_location=device, weights_only=True)
-                    target = getattr(model, layer_name, None)
-                    if target is None:
-                        target = getattr(model.model, layer_name, None)
-                    if target is not None:
-                        target.load_state_dict(state_dict)
-                        logger.info("已注入 {} 权重: {}", layer_name, pt_path)
-                    else:
-                        logger.warning("未找到 {} 层，跳过权重注入", layer_name)
+                    injected = False
+                    # encode() 实际使用 inner 层 (model.model.xxx)，优先注入
+                    inner = getattr(model.model, layer_name, None)
+                    if inner is not None:
+                        inner.load_state_dict(state_dict)
+                        logger.info("已注入 model.model.{} 权重: {}", layer_name, pt_path)
+                        injected = True
+                    # 外层如果也存在且是不同对象，一并注入
+                    outer = getattr(model, layer_name, None)
+                    if outer is not None and outer is not inner:
+                        outer.load_state_dict(state_dict)
+                        logger.info("已注入 model.{} 权重: {}", layer_name, pt_path)
+                        injected = True
+                    if not injected:
+                        logger.warning("未找到 {} 层（inner/outer 均不存在），跳过注入", layer_name)
                 else:
                     logger.warning("{} 不存在，{} 将使用随机权重", pt_path, layer_name)
         _bge_m3_model = _BgeM3EmbeddingWrapper(model)
