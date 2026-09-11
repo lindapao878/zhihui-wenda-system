@@ -272,3 +272,9 @@
 - 正确测试命令：`.venv\Scripts\python.exe -m unittest discover -s tests -t . -v`；必须带 `-t .`，否则测试包隔离入口不会执行。
 - 验证结果：53/53 通过，耗时 2.321s，无本机连接失败日志。
 | 42 | 单元测试隔离：unittest package 模式统一 mock 任务存储/历史/健康探针/重模型客户端；发现 `discover -s tests` 会把 tests 当顶层目录导致 __init__.py 不执行，改为 `-s tests -t .` 后 53 例通过，耗时从 179s 降至 2.321s | tests/__init__.py / PROJECT_STATUS.md |
+### P0-2 服务可观测最小化
+- 改动：任务记录新增 `durations_ms`，查询/导入 BaseNode 记录节点耗时并在成功或失败路径输出日志；QueryService 记录 `total` 并在 `/status` 返回；`/ready` 新增 BGE-M3 和 reranker 单例状态，不主动加载模型，也不用模型状态影响 ready 判定。
+- 验证：新增 10 个可观测性回归测试；63/63 通过，耗时 2.462s；相关文件 `py_compile` 通过；无外部服务连接失败。
+- 遇到的问题：Windows 控制台输出中文存在编码乱码，但测试断言、耗时字段和失败路径均正常。
+- 下一步：P0-3 仓库基线，执行全量语法检查、干净 clone 构建/启动冒烟、更新状态并打 `v1.0.0-rc.1`。
+| 43 | 最小可观测：节点/全链路耗时持久化与日志，`/ready` 模型加载状态；新增 10 个回归测试，63/63 通过，耗时 2.462s | task_store.py / task_util.py / query_process/base.py / import_process/base.py / query_service.py / health_util.py / bge_*_util.py / tests/test_observability.py |

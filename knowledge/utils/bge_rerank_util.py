@@ -53,3 +53,8 @@ def get_reranker_model() -> Optional[BgeReranker]:
         return None
 
     return _reranker_model
+
+
+def is_reranker_model_loaded() -> bool:
+    """Return current model singleton state without loading the model."""
+    return _reranker_model is not None

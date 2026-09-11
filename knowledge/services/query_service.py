@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import uuid
+import time
 from typing import Any, Dict, List
 
 from knowledge.processor.query_process.main_graph import query_app
 from knowledge.utils.mongo_history_util import clear_history, get_recent_messages
 from knowledge.utils.sse_util import create_sse_queue, push_sse_event
-from knowledge.utils.task_util import TASK_STATUS_COMPLETED, TASK_STATUS_PROCESSING, TASK_STATUS_FAILED, get_done_task_list, get_running_task_list, get_task_result, get_task_status, set_task_result, update_task_status
+from knowledge.utils.task_util import TASK_STATUS_COMPLETED, TASK_STATUS_PROCESSING, TASK_STATUS_FAILED, get_done_task_list, get_task_durations, get_running_task_list, get_task_result, get_task_status, record_task_duration, set_task_result, update_task_status
 from knowledge.utils.logger_util import logger
 
 
@@ -31,6 +32,7 @@ class QueryService:
             "task_id": task_id,
             "is_stream": is_stream,
         }
+        start_time = time.perf_counter()
         try:
             query_app.invoke(state)
         except Exception as exc:
@@ -38,6 +40,8 @@ class QueryService:
             set_task_result(task_id, 'error', str(exc))
             update_task_status(task_id, TASK_STATUS_FAILED)
         finally:
+            total_ms = (time.perf_counter() - start_time) * 1000
+            record_task_duration(task_id, 'total', total_ms)
             set_task_result(task_id, 'done_list', get_done_task_list(task_id))
             set_task_result(task_id, 'running_list', get_running_task_list(task_id))
             if get_task_status(task_id) != TASK_STATUS_FAILED:
@@ -60,6 +64,7 @@ class QueryService:
             'answer': self.get_answer(task_id),
             'error': get_task_result(task_id, 'error'),
             'image_urls': get_task_result(task_id, 'image_urls'),
+            'durations_ms': get_task_durations(task_id),
         }
 
     def get_history(self, session_id: str, limit: int = 50) -> List[Dict[str, Any]]:

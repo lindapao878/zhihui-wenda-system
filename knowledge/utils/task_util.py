@@ -6,7 +6,7 @@ survive process restarts while keeping all call sites untouched.
 """
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, Dict, List
 
 from knowledge.utils import task_store
 
@@ -55,3 +55,11 @@ def get_task_result(task_id: str, key: str, default: Any = None) -> Any:
 
 def clear_task(task_id: str) -> None:
     task_store.clear(task_id)
+
+
+def record_task_duration(task_id: str, stage: str, duration_ms: float) -> None:
+    task_store.record_duration(task_id, stage, duration_ms)
+
+
+def get_task_durations(task_id: str) -> Dict[str, float]:
+    return task_store.get_durations(task_id)

@@ -1,7 +1,7 @@
 """MongoDB-backed task state store with graceful in-memory fallback.
 
 Document shape in kb_tasks collection:
-    { _id: task_id, status, running_nodes: [], done_nodes: [], result: {}, updated_at }
+    { _id: task_id, status, running_nodes: [], done_nodes: [], result: {}, durations_ms: {}, updated_at }
 
 If MongoDB is unreachable at first access, all operations silently
 degrade to an in-memory dict so the API still responds.
@@ -9,6 +9,7 @@ degrade to an in-memory dict so the API still responds.
 from __future__ import annotations
 
 import os
+import math
 import time
 from typing import Any, Dict, List, Optional
 
@@ -45,10 +46,12 @@ def _now() -> float:
 
 
 def _mem_doc(task_id: str) -> Dict[str, Any]:
-    return _memory.setdefault(
+    doc = _memory.setdefault(
         task_id,
-        {"status": "pending", "running_nodes": [], "done_nodes": [], "result": {}},
+        {"status": "pending", "running_nodes": [], "done_nodes": [], "result": {}, "durations_ms": {}},
     )
+    doc.setdefault("durations_ms", {})
+    return doc
 
 
 def mark_processing_as_interrupted() -> int:
@@ -86,7 +89,7 @@ def add_running(task_id: str, node_name: str) -> None:
             {
                 "$addToSet": {"running_nodes": node_name},
                 "$pull": {"done_nodes": node_name},
-                "$setOnInsert": {"status": "pending", "result": {}},
+                "$setOnInsert": {"status": "pending", "result": {}, "durations_ms": {}},
                 "$set": {"updated_at": _now()},
             },
             upsert=True,
@@ -109,7 +112,7 @@ def add_done(task_id: str, node_name: str) -> None:
             {
                 "$pull": {"running_nodes": node_name},
                 "$addToSet": {"done_nodes": node_name},
-                "$setOnInsert": {"status": "pending", "result": {}},
+                "$setOnInsert": {"status": "pending", "result": {}, "durations_ms": {}},
                 "$set": {"updated_at": _now()},
             },
             upsert=True,
@@ -196,6 +199,48 @@ def get_result(task_id: str, key: str, default: Any = None) -> Any:
     except Exception as exc:
         logger.warning("task_store get_result 失败: {}", exc)
         return default
+
+
+def record_duration(task_id: str, stage: str, duration_ms: float) -> None:
+    """Persist a stage duration in milliseconds on the task document."""
+    stage = str(stage).strip()
+    try:
+        duration = float(duration_ms)
+    except (TypeError, ValueError):
+        logger.warning("task_store 忽略非法耗时: task_id={} stage={} value={!r}", task_id, stage, duration_ms)
+        return
+
+    if not stage or "." in stage or "$" in stage or duration < 0 or not math.isfinite(duration):
+        logger.warning("task_store 忽略非法耗时: task_id={} stage={} value={!r}", task_id, stage, duration_ms)
+        return
+
+    col = _get_collection()
+    if col is None:
+        _mem_doc(task_id)["durations_ms"][stage] = duration
+        return
+    try:
+        col.update_one(
+            {"_id": task_id},
+            {
+                "$set": {f"durations_ms.{stage}": duration, "updated_at": _now()},
+            },
+            upsert=True,
+        )
+    except Exception as exc:
+        logger.warning("task_store record_duration 失败: {}", exc)
+
+
+def get_durations(task_id: str) -> Dict[str, float]:
+    """Return a copy of stage durations for a task."""
+    col = _get_collection()
+    if col is None:
+        return dict(_mem_doc(task_id).get("durations_ms", {}))
+    try:
+        doc = col.find_one({"_id": task_id}, {"durations_ms": 1})
+        return dict(doc.get("durations_ms", {})) if doc else {}
+    except Exception as exc:
+        logger.warning("task_store get_durations 失败: {}", exc)
+        return {}
 
 
 def clear(task_id: str) -> None:

@@ -52,6 +52,16 @@ def check_minio() -> bool:
         return False
 
 
+def get_model_statuses() -> Dict[str, str]:
+    """Report model singleton state without triggering model loading."""
+    from knowledge.utils import bge_m3_embedding_util, bge_rerank_util
+
+    return {
+        "bge_m3_embedding": "loaded" if bge_m3_embedding_util.is_bge_m3_model_loaded() else "not_loaded",
+        "bge_reranker": "loaded" if bge_rerank_util.is_reranker_model_loaded() else "not_loaded",
+    }
+
+
 def readiness_check() -> Dict[str, object]:
     """Run all middleware checks and return a structured result."""
     checks = {
@@ -63,5 +73,6 @@ def readiness_check() -> Dict[str, object]:
     return {
         "ready": len(failed) == 0,
         "checks": checks,
+        "models": get_model_statuses(),
         "failed": failed,
     }

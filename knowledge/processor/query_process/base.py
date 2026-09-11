@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import time
 from typing import Optional, TypeVar
 
 from knowledge.processor.query_process.config import QueryConfig, get_config
 from knowledge.utils.task_util import add_done_task, add_running_task
 from knowledge.utils.sse_util import SSEEvent, push_sse_event
 from knowledge.utils.task_util import get_done_task_list, get_running_task_list
+from knowledge.utils.task_util import record_task_duration
 from knowledge.utils.logger_util import logger
 
 T = TypeVar("T")
@@ -21,6 +23,7 @@ class BaseNode(ABC):
 
     def __call__(self, state: T) -> T:
         task_id = state.get("task_id", "")
+        start_time = time.perf_counter()
         try:
             logger.info("--- {} 开始 ---", self.name)
             if task_id:
@@ -37,6 +40,11 @@ class BaseNode(ABC):
         except Exception as exc:
             logger.error("{} 执行失败: {}", self.name, exc)
             raise
+        finally:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            if task_id:
+                record_task_duration(task_id, self.name, duration_ms)
+            logger.info("--- {} 耗时 {:.1f}ms ---", self.name, duration_ms)
 
     @staticmethod
     def _push_progress(task_id, state):

@@ -78,6 +78,11 @@ def get_beg_m3_embedding_model():
     return _bge_m3_model
 
 
+def is_bge_m3_model_loaded() -> bool:
+    """Return current model singleton state without loading the model."""
+    return _bge_m3_model is not None
+
+
 def normalize_sparse_vector(sparse_dict: Dict[int, float]) -> Dict[int, float]:
     norm = math.sqrt(sum(value * value for value in sparse_dict.values()))
     if norm == 0:
