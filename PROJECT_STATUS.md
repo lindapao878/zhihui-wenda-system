@@ -314,3 +314,8 @@
 - 遇到的问题：原 README 仍写着 53 个旧测试与重复上传入口，已同步为 95/95 与内容 hash 409 行为；部署细节保持收敛，不新增服务。
 - 下一步：P1-5 真实评估报告，先检查本机 8001、Milvus、MongoDB、MinIO 可用性，可用才执行评估。
 | 49 | 求职化 README：精简文档、Mermaid 部署链路、面试演示与 Celery/Redis/Prometheus/GPU 取舍表，95/95 测试可复现 | README.md |
+### P1-5 真实评估报告（阻塞）
+- 阻塞原因：本机 `http://localhost:8001/health` 超时不可用；`8001/19530/27017/9000` 均无监听；`docker` 命令不可用，因此无法确认 Milvus、MongoDB、MinIO 中间件。未执行 `eval/run_eval.py`，未生成假报告。
+- 所需环境：启动查询服务 8001，并确保 Milvus 19530、MongoDB 27017、MinIO 9000 可用且知识库已导入；之后运行 `.venv\Scripts\python.exe eval/run_eval.py --repeat 2 --output eval/reports/eval_report.json`。
+- 下一步：先做最终语法与全量测试回归；由于 P1-5 未完成真实报告，不满足最终验收条件，暂不打 `v1.0.0`。
+| 50 | 真实评估报告阻塞：本机查询服务与三类中间件不可用，未伪造报告；等待服务环境后补跑评估并提交报告 | PROJECT_STATUS.md |
