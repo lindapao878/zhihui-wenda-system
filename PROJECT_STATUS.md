@@ -302,3 +302,9 @@
 - 遇到的问题：`auto` 采用单次按需扩展而非循环重试，先保证可控、可测、可解释；低分但非空的触发阈值留待后续单独参数。
 - 下一步：P1-4 内容级去重，新增 `kb_documents` SHA-256 注册表并补充导入/删除状态流转测试。
 | 47 | 检索模式：`RETRIEVAL_MODE=basic|hyde|full|auto`，默认 full 不变，auto 空向量时单次扩展；新增 8 个测试，全量 86/86 通过 | query_process/config.py / query_process/main_graph.py / .env.example / tests/test_retrieval_mode.py |
+### P1-4 内容级去重
+- 改动：新增 Mongo `kb_documents` 注册表，`_id=content_hash`，状态含 `importing/active/failed/superseded`；上传预检优先按 SHA-256 判重，Mongo 不可用时回退原 `file_title` 预检；同名不同内容允许重新导入并 supersede 旧记录，删除时同步注册表并按实际删除结果递增 `dataset_version`。
+- 验证：新增 9 个内容 hash 注册表/状态流转/上传路由测试；全量 95/95 通过，耗时 3.396s；相关文件 `py_compile` 通过；修掉 `file_import_service.py` 行尾空格后 `git diff --check` 通过。
+- 遇到的问题：P1-4 首次写入时全文件带行尾空格，用机械清理后恢复干净 diff；Mongo 注册表不可用时不阻塞导入，仅记录 warning 并降级。
+- 下一步：P2 求职化呈现，精简 README 并补 VPS 查询链路、AutoDL 导入链路图和“为什么不用 Celery/Redis/Prometheus/GPU 调度”取舍表。
+| 48 | 内容级去重：SHA-256 注册表优先、file_title 仅作入口；同名不同内容可重导，删除同步注册表；新增 9 个测试，全量 95/95 通过 | document_registry_util.py / file_import_service.py / import_router.py / import_process/state.py / tests/test_content_hash_dedup.py |

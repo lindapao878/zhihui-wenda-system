@@ -1,6 +1,7 @@
 """File import service."""
 from __future__ import annotations
 
+import hashlib
 import os
 import uuid
 from pathlib import Path
@@ -16,14 +17,52 @@ from knowledge.utils.task_util import TASK_STATUS_COMPLETED, TASK_STATUS_FAILED,
 from knowledge.utils.task_util import set_task_result
 from knowledge.utils.milvus_string_util import escape_milvus_string
 from knowledge.utils.dataset_version_util import get_dataset_version, increment_dataset_version
+from knowledge.utils.document_registry_util import (
+    delete_by_title,
+    find_active_document,
+    is_registry_available,
+    mark_active,
+    mark_failed,
+    supersede_title,
+)
 from knowledge.utils.milvus_util import get_milvus_client
 from knowledge.utils.logger_util import logger
 
 
 
 class ImportFileService:
+    @staticmethod
+    def _compute_content_hash(file: UploadFile) -> str:
+        stream = getattr(file, "file", None)
+        if stream is None:
+            return ""
+        digest = hashlib.sha256()
+        original_position = stream.tell()
+        stream.seek(0)
+        try:
+            while True:
+                chunk = stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+        except Exception as exc:
+            logger.warning("计算上传文件 SHA-256 失败: {}", exc)
+            return ""
+        finally:
+            try:
+                stream.seek(original_position)
+            except Exception:
+                pass
+        return digest.hexdigest()
+
     def check_duplicate_file(self, file: UploadFile) -> bool:
-        """上传前预检：Milvus kb_chunks 是否已有同 file_title。"""
+        """上传前预检：优先按内容 SHA-256，注册表不可用时回退 file_title。"""
+        content_hash = self._compute_content_hash(file)
+        if not content_hash:
+            return False
+        if is_registry_available():
+            return bool(find_active_document(content_hash))
+
         try:
             from knowledge.processor.import_process.config import get_config
             from knowledge.utils.milvus_util import get_milvus_client
@@ -46,7 +85,7 @@ class ImportFileService:
             logger.warning("去重预检失败: {}", exc)
             return False
 
-    def process_upload_file(self, file: UploadFile) -> Tuple[str, str, str]:
+    def process_upload_file(self, file: UploadFile) -> Tuple[str, str, str, str]:
         task_id = str(uuid.uuid4())
         update_task_status(task_id, TASK_STATUS_PROCESSING)
 
@@ -56,32 +95,48 @@ class ImportFileService:
         original_name = Path(file.filename or "upload.pdf").name
         import_file_path = os.path.join(file_dir, original_name)
 
+        content_hash = self._compute_content_hash(file)
+        stream = getattr(file, "file", None)
+        if stream is None:
+            raise RuntimeError("上传文件流不可用")
+        stream.seek(0)
         with open(import_file_path, "wb") as buffer:
-            buffer.write(file.file.read())
+            while True:
+                chunk = stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                buffer.write(chunk)
 
         logger.info("上传文件 {} -> {}", original_name, import_file_path)
-        return task_id, file_dir, import_file_path
+        return task_id, file_dir, import_file_path, content_hash
 
-    def run_import_graph(self, task_id: str, file_dir: str, import_file_path: str) -> None:
+    def run_import_graph(self, task_id: str, file_dir: str, import_file_path: str, content_hash: str = "") -> None:
         update_task_status(task_id, TASK_STATUS_PROCESSING)
+        file_title = Path(import_file_path).stem
         state = create_default_state(
             task_id=task_id,
             file_dir=file_dir,
             import_file_path=import_file_path,
+            content_hash=content_hash,
         )
         try:
             final_state = kb_import_graph_app.invoke(state)
             logger.info("导入任务完成: {}, 切片数={}", task_id, len(final_state.get("chunks", [])))
+            if content_hash:
+                mark_active(content_hash, file_title, task_id)
+                supersede_title(file_title, content_hash)
             dataset_version = increment_dataset_version()
             logger.info("导入成功，dataset_version={}，查询缓存已按版本自然失效: {}", dataset_version, task_id)
             update_task_status(task_id, TASK_STATUS_COMPLETED)
         except Exception as exc:
             logger.exception("导入任务失败: {}", task_id)
+            if content_hash:
+                mark_failed(content_hash, file_title, task_id)
             update_task_status(task_id, TASK_STATUS_FAILED)
             set_task_result(task_id, "error", str(exc))
 
     def delete_document(self, file_title: str) -> dict:
-        """按 file_title 删除三张 Milvus 集合中的文档记录。"""
+        """按 file_title 删除三张 Milvus 集合和 kb_documents 注册记录。"""
         config = get_config()
         client = get_milvus_client()
         if client is None:
@@ -111,6 +166,12 @@ class ImportFileService:
             except Exception as exc:
                 logger.warning("删除集合 {} 失败: {}", collection_name, exc)
                 deleted[label] = 0
+        registry_deleted = delete_by_title(file_title)
         total_deleted = sum(deleted.values())
-        dataset_version = increment_dataset_version() if total_deleted else get_dataset_version()
-        return {"file_title": file_title, "deleted": deleted, "dataset_version": dataset_version}
+        dataset_version = increment_dataset_version() if (total_deleted or registry_deleted) else get_dataset_version()
+        return {
+            "file_title": file_title,
+            "deleted": deleted,
+            "registry_deleted": registry_deleted,
+            "dataset_version": dataset_version,
+        }

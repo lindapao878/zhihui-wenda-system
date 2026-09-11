@@ -19,6 +19,7 @@ class ImportGraphState(TypedDict, total=False):
     item_name: str
     md_content: str
     chunks: List
+    content_hash: str
 
 
 GRAPH_DEFAULT_STATE: ImportGraphState = {
@@ -35,6 +36,7 @@ GRAPH_DEFAULT_STATE: ImportGraphState = {
     "md_content": "",
     "chunks": [],
     "item_name": "",
+    "content_hash": "",
 }
 
 

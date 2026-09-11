@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import unittest
 from unittest.mock import MagicMock, patch
+import io
 
 import batch_import
 from knowledge.processor.query_process.nodes.answer_output_node import AnswerOutputNode
@@ -105,6 +106,7 @@ class TestImportDedupPrecheck(unittest.TestCase):
 
         fake_file = MagicMock()
         fake_file.filename = "测试文档.md"
+        fake_file.file = io.BytesIO(b"test content")
         service = ImportFileService()
         self.assertTrue(service.check_duplicate_file(fake_file))
         fake_client.query.assert_called_once()
@@ -120,6 +122,7 @@ class TestImportDedupPrecheck(unittest.TestCase):
 
         fake_file = MagicMock()
         fake_file.filename = "新文档.md"
+        fake_file.file = io.BytesIO(b"test content")
         service = ImportFileService()
         self.assertFalse(service.check_duplicate_file(fake_file))
 
@@ -133,6 +136,7 @@ class TestImportDedupPrecheck(unittest.TestCase):
 
         fake_file = MagicMock()
         fake_file.filename = "新文档.md"
+        fake_file.file = io.BytesIO(b"test content")
         service = ImportFileService()
         self.assertFalse(service.check_duplicate_file(fake_file))
         fake_client.query.assert_not_called()

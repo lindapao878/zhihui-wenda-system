@@ -18,6 +18,7 @@ from knowledge.schema.upload_schema import UploadResponse
 from knowledge.services.file_import_service import ImportFileService
 from knowledge.services.task_service import TaskService
 from knowledge.utils.health_util import readiness_check
+from knowledge.utils.document_registry_util import register_importing
 from knowledge.utils.logger_util import logger
 from knowledge.utils.task_util import init_on_startup
 
@@ -53,8 +54,9 @@ def register_router(app: FastAPI):
             raise HTTPException(status_code=400, detail=f"不支持的文件类型: {suffix or '未知'}")
         if service.check_duplicate_file(file):
             raise HTTPException(status_code=409, detail="文件已导入，跳过重复导入")
-        task_id, file_dir, import_file_path = service.process_upload_file(file)
-        background_tasks.add_task(service.run_import_graph, task_id, file_dir, import_file_path)
+        task_id, file_dir, import_file_path, content_hash = service.process_upload_file(file)
+        register_importing(content_hash, Path(file.filename or "upload.pdf").stem, task_id)
+        background_tasks.add_task(service.run_import_graph, task_id, file_dir, import_file_path, content_hash)
         return UploadResponse(message="文件上传成功", task_id=task_id)
 
     @app.get("/status/{task_id}", response_model=TaskStatusResponse)

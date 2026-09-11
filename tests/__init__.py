@@ -25,6 +25,7 @@ _start_patch("knowledge.utils.task_store._get_collection", return_value=None)
 # Dataset-version tests use the process-local fallback; Mongo mode is mocked per test.
 _start_patch("knowledge.utils.dataset_version_util._get_metadata_collection", return_value=None)
 _start_patch("knowledge.utils.query_cache.get_dataset_version", return_value=1)
+_start_patch("knowledge.utils.document_registry_util._get_collection", return_value=None)
 
 # Chat history nodes should not depend on a running MongoDB instance.
 _start_patch("knowledge.utils.mongo_history_util.get_recent_messages", return_value=[])
