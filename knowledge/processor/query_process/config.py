@@ -9,10 +9,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_RETRIEVAL_MODES = {"basic", "hyde", "full", "auto"}
+
+
+def normalize_retrieval_mode(mode: str) -> str:
+    normalized = str(mode).strip().lower()
+    if normalized not in _RETRIEVAL_MODES:
+        raise ValueError(f"RETRIEVAL_MODE 必须是 basic|hyde|full|auto, 当前值: {mode}")
+    return normalized
+
 
 @dataclass
 class QueryConfig:
     max_context_chars: int = field(default_factory=lambda: int(os.getenv("MAX_CONTEXT_CHARS", "12000")))
+
+    retrieval_mode: str = field(
+        default_factory=lambda: normalize_retrieval_mode(os.getenv("RETRIEVAL_MODE", "full"))
+    )
 
     rerank_max_top_k: int = field(default_factory=lambda: int(os.getenv("RERANK_MAX_TOP_K", "10")))
     rerank_min_top_k: int = field(default_factory=lambda: int(os.getenv("RERANK_MIN_TOP_K", "3")))

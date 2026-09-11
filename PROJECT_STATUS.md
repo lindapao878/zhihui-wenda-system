@@ -296,3 +296,9 @@
 - 遇到的问题：测试环境需要同时固定 `dataset_version` 为 1，避免导入测试改变进程内版本后污染其他缓存用例；评估器同步修正结构化 `source_refs` 的引用完整度计算。
 - 下一步：P1-3 检索链路按需开，实现 `RETRIEVAL_MODE=basic|hyde|full|auto` 并补路由测试。
 | 46 | 缓存版本化：Mongo 全局 dataset_version + 跨进程自然失效；结构化缓存完整恢复图片、来源、商品和实体；全量 78/78 通过 | dataset_version_util.py / query_cache.py / answer_output_node.py / item_name_confirm_node.py / file_import_service.py / query_service.py / query_router.py / tests/test_cache_versioning.py |
+### P1-3 检索链路按需开
+- 改动：新增 `RETRIEVAL_MODE=basic|hyde|full|auto`，默认 `full` 保持原链路；`basic` 仅向量检索，`hyde` 为向量+HyDE，`auto` 先向量检索、空结果时一次性走扩展路径；非法配置加载即报错，`.env.example` 同步新增默认值。
+- 验证：新增 8 个检索模式测试；全量 86/86 通过，耗时 3.797s；相关文件 `py_compile` 通过。
+- 遇到的问题：`auto` 采用单次按需扩展而非循环重试，先保证可控、可测、可解释；低分但非空的触发阈值留待后续单独参数。
+- 下一步：P1-4 内容级去重，新增 `kb_documents` SHA-256 注册表并补充导入/删除状态流转测试。
+| 47 | 检索模式：`RETRIEVAL_MODE=basic|hyde|full|auto`，默认 full 不变，auto 空向量时单次扩展；新增 8 个测试，全量 86/86 通过 | query_process/config.py / query_process/main_graph.py / .env.example / tests/test_retrieval_mode.py |
