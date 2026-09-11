@@ -64,6 +64,9 @@ class QueryService:
             'answer': self.get_answer(task_id),
             'error': get_task_result(task_id, 'error'),
             'image_urls': get_task_result(task_id, 'image_urls'),
+            'source_refs': get_task_result(task_id, 'source_refs', []),
+            'item_names': get_task_result(task_id, 'item_names', []),
+            'related_entities': get_task_result(task_id, 'related_entities', []),
             'durations_ms': get_task_durations(task_id),
         }
 

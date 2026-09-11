@@ -63,6 +63,9 @@ def register_routes(app: FastAPI):
             running_list=info.get("running_list", []),
             error=info.get("error"),
             image_urls=info.get("image_urls"),
+            source_refs=info.get("source_refs", []),
+            item_names=info.get("item_names", []),
+            related_entities=info.get("related_entities", []),
         )
 
     @app.get("/status/{task_id}")

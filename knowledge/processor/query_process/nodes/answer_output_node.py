@@ -1,7 +1,7 @@
 """Answer generation and history persistence node."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import re
 
 from knowledge.processor.query_process.base import BaseNode
@@ -33,13 +33,25 @@ class AnswerOutputNode(BaseNode):
             state["prompt"] = prompt
             self._generate_answer(state, prompt)
 
-        self._cache_answer(state)
 
         image_urls = self._extract_image_urls(state.get("answer", ""))
         doc_image_urls = self._extract_images_from_docs(state.get("reranked_docs") or [])
-        image_urls = self._merge_image_urls(image_urls, doc_image_urls)
+        cached_image_urls = state.get("image_urls", []) or []
+        image_urls = self._merge_image_urls(cached_image_urls, image_urls, doc_image_urls)
+        state["image_urls"] = image_urls
         if task_id:
             set_task_result(task_id, "image_urls", image_urls)
+
+        source_refs = state.get("source_refs", [])
+        if not source_refs:
+            source_refs = self._extract_source_refs(state.get("reranked_docs") or [])
+            state["source_refs"] = source_refs
+        item_names = state.get("item_names", []) or []
+        related_entities = state.get("related_entities", []) or []
+        if task_id:
+            set_task_result(task_id, "source_refs", source_refs)
+            set_task_result(task_id, "item_names", item_names)
+            set_task_result(task_id, "related_entities", related_entities)
 
         if is_stream:
             push_sse_event(
@@ -48,10 +60,19 @@ class AnswerOutputNode(BaseNode):
                 {"answer": state.get("answer", ""), "image_urls": image_urls},
             )
 
+        cached_result = {
+            "answer": state.get("answer", ""),
+            "image_urls": image_urls,
+            "source_refs": source_refs,
+            "item_names": item_names,
+            "related_entities": related_entities,
+        }
+        self._cache_answer(state, cached_result)
+
         self._write_history(state)
         return state
 
-    def _cache_answer(self, state: QueryGraphState) -> None:
+    def _cache_answer(self, state: QueryGraphState, cached_result: Optional[Dict[str, Any]] = None) -> None:
         """把普通问答结果写入内存缓存；澄清问句不缓存。"""
         rewritten_query = state.get("rewritten_query", "") or state.get("original_query", "")
         answer = state.get("answer", "")
@@ -59,10 +80,18 @@ class AnswerOutputNode(BaseNode):
             return
         if "？" in answer or "不确定" in answer:
             return
-        query_cache.set(rewritten_query, answer)
+        if cached_result is None:
+            cached_result = {
+                "answer": answer,
+                "image_urls": state.get("image_urls", []) or [],
+                "source_refs": state.get("source_refs", []) or [],
+                "item_names": state.get("item_names", []) or [],
+                "related_entities": state.get("related_entities", []) or [],
+            }
+        query_cache.set(rewritten_query, cached_result)
         original_query = state.get("original_query", "")
         if original_query:
-            query_cache.set(original_query, answer)
+            query_cache.set(original_query, cached_result)
 
     def _push_existing_answer(self, state):
         set_task_result(state["task_id"], "answer", state["answer"])
@@ -205,6 +234,26 @@ class AnswerOutputNode(BaseNode):
                 if piece.startswith('http://') or piece.startswith('https://'):
                     urls.append(piece)
         return urls
+
+    @staticmethod
+    def _extract_source_refs(docs) -> List[Dict[str, Any]]:
+        refs = []
+        for doc in docs:
+            if not isinstance(doc, dict):
+                continue
+            ref = {}
+            for field in ("chunk_id", "source", "file_title", "parent_title", "title", "url"):
+                value = doc.get(field)
+                if value not in (None, ""):
+                    ref[field] = value
+            if doc.get("score") is not None:
+                try:
+                    ref["score"] = float(doc["score"])
+                except (TypeError, ValueError):
+                    pass
+            if ref:
+                refs.append(ref)
+        return refs
 
     @staticmethod
     def _extract_images_from_docs(docs) -> List[str]:

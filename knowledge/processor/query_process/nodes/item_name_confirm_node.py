@@ -199,18 +199,36 @@ class ItemNameConfirmNode(BaseNode):
         if state.get("answer"):
             return
         rewritten_query = state.get("rewritten_query", "")
-        cached_answer = query_cache.get(rewritten_query)
-        if cached_answer:
-            state["answer"] = cached_answer
+        cached_result = query_cache.get(rewritten_query)
+        if isinstance(cached_result, str):
+            cached_result = {"answer": cached_result, "source_refs": []}
+        if cached_result:
+            self._restore_cached_result(state, cached_result)
             logger.info(
-                "QUERY_CACHE_HIT rewritten_query={} answer_len={}", rewritten_query, len(cached_answer)
+                "QUERY_CACHE_HIT rewritten_query={} answer_len={} source_refs={}",
+                rewritten_query, len(str(cached_result.get("answer", ""))), len(cached_result.get("source_refs", [])),
             )
             return
         original_query = state.get("original_query", "")
         if original_query and original_query != rewritten_query:
-            cached_answer = query_cache.get(original_query)
-            if cached_answer:
-                state["answer"] = cached_answer
+            cached_result = query_cache.get(original_query)
+            if isinstance(cached_result, str):
+                cached_result = {"answer": cached_result, "source_refs": []}
+            if cached_result:
+                self._restore_cached_result(state, cached_result)
                 logger.info(
-                    "QUERY_CACHE_HIT original_query={} answer_len={}", original_query, len(cached_answer)
+                    "QUERY_CACHE_HIT original_query={} answer_len={} source_refs={}",
+                    original_query, len(str(cached_result.get("answer", ""))), len(cached_result.get("source_refs", [])),
                 )
+
+    @staticmethod
+    def _restore_cached_result(state: QueryGraphState, cached_result) -> None:
+        if isinstance(cached_result, str):
+            cached_result = {"answer": cached_result}
+        if not isinstance(cached_result, dict):
+            return
+        state["answer"] = str(cached_result.get("answer", ""))
+        for field in ("image_urls", "source_refs", "item_names", "related_entities"):
+            value = cached_result.get(field, [])
+            if isinstance(value, list):
+                state[field] = value

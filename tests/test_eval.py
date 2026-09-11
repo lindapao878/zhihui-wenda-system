@@ -72,6 +72,21 @@ class TestEvaluationMetrics(unittest.TestCase):
         self.assertEqual(result["top3_recall"], 1.0)
         self.assertEqual(result["top1_recall"], 0.0)
 
+    def test_citation_completeness_uses_structured_refs(self):
+        case = {
+            "id": "case_structured_refs",
+            "scenario": "local_answer",
+            "query": "BGE-M3 是什么？",
+            "expected_answer_keywords": ["BGE-M3"],
+            "expected_file_titles": ["guide.md"],
+        }
+        state = {
+            "answer": "BGE-M3 是混合向量模型。",
+            "source_refs": [{"chunk_id": 1, "file_title": "guide.md", "score": 0.9}],
+            "reranked_docs": [],
+        }
+        result = score_case(case, state, 10.0)
+
     def test_refusal_case(self):
         case = {
             "id": "case_refusal",

@@ -290,3 +290,9 @@
 - 遇到的问题：本机 8001 查询服务和 Milvus 当前不可用，未生成冒充真实质量的评估报告；评估命令已可运行，待服务可用后生成正式报告。
 - 下一步：P1-2 缓存版本化与结构化缓存，同时为评估器补齐 `source_refs`。
 | 45 | 评估基线：33 条样例 + 指标计算器 + 运行脚本；新增 7 个测试，全量 70/70 通过 | eval/golden.jsonl / eval/__init__.py / eval/run_eval.py / tests/test_eval.py |
+### P1-2 缓存版本化与结构化缓存
+- 改动：Mongo `kb_metadata` 维护全局 `dataset_version`；查询缓存键包含数据集版本，导入成功或有效删除后版本递增，旧缓存自然失效，不再跨进程 `clear()`；缓存值完整保存 `answer`、`image_urls`、`source_refs`、`item_names`、`related_entities`，命中时全部恢复，并在查询 API 返回。
+- 验证：新增 8 个缓存版本化/结构化缓存回归测试，另更新 4 个旧缓存测试；全量 78/78 通过，耗时 4.286s；相关文件 `py_compile` 通过。
+- 遇到的问题：测试环境需要同时固定 `dataset_version` 为 1，避免导入测试改变进程内版本后污染其他缓存用例；评估器同步修正结构化 `source_refs` 的引用完整度计算。
+- 下一步：P1-3 检索链路按需开，实现 `RETRIEVAL_MODE=basic|hyde|full|auto` 并补路由测试。
+| 46 | 缓存版本化：Mongo 全局 dataset_version + 跨进程自然失效；结构化缓存完整恢复图片、来源、商品和实体；全量 78/78 通过 | dataset_version_util.py / query_cache.py / answer_output_node.py / item_name_confirm_node.py / file_import_service.py / query_service.py / query_router.py / tests/test_cache_versioning.py |

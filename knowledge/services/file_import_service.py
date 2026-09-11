@@ -15,7 +15,7 @@ from knowledge.processor.import_process.config import get_config
 from knowledge.utils.task_util import TASK_STATUS_COMPLETED, TASK_STATUS_FAILED, TASK_STATUS_PROCESSING, update_task_status
 from knowledge.utils.task_util import set_task_result
 from knowledge.utils.milvus_string_util import escape_milvus_string
-from knowledge.utils.query_cache import query_cache
+from knowledge.utils.dataset_version_util import get_dataset_version, increment_dataset_version
 from knowledge.utils.milvus_util import get_milvus_client
 from knowledge.utils.logger_util import logger
 
@@ -72,8 +72,8 @@ class ImportFileService:
         try:
             final_state = kb_import_graph_app.invoke(state)
             logger.info("导入任务完成: {}, 切片数={}", task_id, len(final_state.get("chunks", [])))
-            query_cache.clear()
-            logger.info("导入成功，已清空查询缓存: {}", task_id)
+            dataset_version = increment_dataset_version()
+            logger.info("导入成功，dataset_version={}，查询缓存已按版本自然失效: {}", dataset_version, task_id)
             update_task_status(task_id, TASK_STATUS_COMPLETED)
         except Exception as exc:
             logger.exception("导入任务失败: {}", task_id)
@@ -111,4 +111,6 @@ class ImportFileService:
             except Exception as exc:
                 logger.warning("删除集合 {} 失败: {}", collection_name, exc)
                 deleted[label] = 0
-        return {"file_title": file_title, "deleted": deleted}
+        total_deleted = sum(deleted.values())
+        dataset_version = increment_dataset_version() if total_deleted else get_dataset_version()
+        return {"file_title": file_title, "deleted": deleted, "dataset_version": dataset_version}

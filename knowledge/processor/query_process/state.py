@@ -18,6 +18,8 @@ class QueryGraphState(TypedDict, total=False):
     reranked_docs: list
     prompt: str
     answer: str
+    image_urls: List[str]
+    source_refs: list
     item_names: List[str]
     related_entities: List[str]
     rewritten_query: str
@@ -38,6 +40,8 @@ DEFAULT_STATE: QueryGraphState = {
     "reranked_docs": [],
     "prompt": "",
     "answer": "",
+    "image_urls": [],
+    "source_refs": [],
     "item_names": [],
     "related_entities": [],
     "rewritten_query": "",

@@ -18,7 +18,12 @@ class TestQueryCache(unittest.TestCase):
     def test_set_get_hit(self):
         cache = QueryCache(ttl_seconds=300)
         cache.set("三体简介", "三体是刘慈欣创作的长篇科幻小说。")
-        self.assertEqual(cache.get("三体简介"), "三体是刘慈欣创作的长篇科幻小说。")
+        cached = cache.get("三体简介")
+        self.assertEqual(cached["answer"], "三体是刘慈欣创作的长篇科幻小说。")
+        self.assertEqual(cached["image_urls"], [])
+        self.assertEqual(cached["source_refs"], [])
+        self.assertEqual(cached["item_names"], [])
+        self.assertEqual(cached["related_entities"], [])
 
     def test_ttl_expiry(self):
         cache = QueryCache(ttl_seconds=-1)
@@ -39,7 +44,11 @@ class TestAnswerCache(unittest.TestCase):
     def test_cache_answer_writes_normal_answer(self, mock_cache):
         state = {"rewritten_query": "三体简介", "answer": "三体是一部科幻小说。"}
         self.node._cache_answer(state)
-        mock_cache.set.assert_called_once_with("三体简介", "三体是一部科幻小说。")
+        args, _ = mock_cache.set.call_args
+        self.assertEqual(args[0], "三体简介")
+        self.assertEqual(args[1]["answer"], "三体是一部科幻小说。")
+        self.assertEqual(args[1]["image_urls"], [])
+        self.assertEqual(args[1]["source_refs"], [])
 
     @patch("knowledge.processor.query_process.nodes.answer_output_node.query_cache")
     def test_cache_answer_skips_clarification(self, mock_cache):
@@ -59,7 +68,13 @@ class TestQueryCacheHit(unittest.TestCase):
         }
         node._item_name_aligner = MagicMock()
         node._item_name_aligner.match_align_filter.return_value = ([], [])
-        mock_cache.get.return_value = "缓存的回答内容"
+        mock_cache.get.return_value = {
+            "answer": "缓存的回答内容",
+            "image_urls": ["http://example.com/a.jpg"],
+            "source_refs": [{"chunk_id": 1}],
+            "item_names": ["万用表"],
+            "related_entities": ["电压"],
+        }
 
         state = {
             "original_query": "原始问题",
@@ -70,6 +85,10 @@ class TestQueryCacheHit(unittest.TestCase):
         }
         out = node.process(state)
         self.assertEqual(out["answer"], "缓存的回答内容")
+        self.assertEqual(out["image_urls"], ["http://example.com/a.jpg"])
+        self.assertEqual(out["source_refs"], [{"chunk_id": 1}])
+        self.assertEqual(out["item_names"], ["万用表"])
+        self.assertEqual(out["related_entities"], ["电压"])
         mock_cache.get.assert_called_once_with("重写后的问题")
 
 

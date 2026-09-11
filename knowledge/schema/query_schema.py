@@ -18,6 +18,9 @@ class QueryResponse(BaseModel):
     running_list: List[str] = Field(default_factory=list)
     error: Optional[str] = Field(default=None)
     image_urls: Optional[List[str]] = Field(default=None)
+    source_refs: Optional[List[dict]] = Field(default_factory=list)
+    item_names: Optional[List[str]] = Field(default_factory=list)
+    related_entities: Optional[List[str]] = Field(default_factory=list)
 
 
 class StreamSubmitResponse(BaseModel):

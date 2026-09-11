@@ -104,8 +104,16 @@ def score_case(
         all_refs = source_references(documents)
         top1_recall = _reference_hit_ratio(expected_titles, top1_refs)
         top3_recall = _reference_hit_ratio(expected_titles, top3_refs)
-        explicit_refs = state.get("source_refs") or state.get("item_names") or []
-        citation_ratio = _reference_hit_ratio(expected_titles, [_normalize(ref) for ref in explicit_refs] or all_refs)
+        explicit_refs = state.get("source_refs") or []
+        explicit_ref_values = []
+        for ref in explicit_refs:
+            if isinstance(ref, dict):
+                for field in ("source", "file_title", "parent_title", "title"):
+                    if ref.get(field):
+                        explicit_ref_values.append(_normalize(ref[field]))
+            else:
+                explicit_ref_values.append(_normalize(ref))
+        citation_ratio = _reference_hit_ratio(expected_titles, explicit_ref_values or all_refs)
     else:
         top1_context = " ".join(str(doc.get("content", "")) for doc in top1_docs)
         top3_context = " ".join(str(doc.get("content", "")) for doc in top3_docs)
