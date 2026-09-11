@@ -267,3 +267,8 @@
 - **根因**：BGEM3FlagModel 加载后 model.model.sparse_linear 和 model.model.colbert_linear 是随机初始化的，ncode() 实际使用 inner 层，导致 lexical_weights 输出无效 token
 - **修复**：get_beg_m3_embedding_model 中从模型目录手动加载 sparse_linear.pt / colbert_linear.pt，注入到 model.model.xxx（inner 优先，外层独立存在时一并注入）
 - **关联修复**：此前 _to_csr 已兼容整数 token_id（BGE-M3 lexical_weights 实际返回 int 键而非 str）
+## 求职版收敛 (2026-09-12)
+- P0-1 测试隔离：`tests/__init__.py` 统一替身任务状态、Mongo 历史、健康探针和重模型客户端；50+53 原测试不再依赖本机 MongoDB/Milvus/MinIO。
+- 正确测试命令：`.venv\Scripts\python.exe -m unittest discover -s tests -t . -v`；必须带 `-t .`，否则测试包隔离入口不会执行。
+- 验证结果：53/53 通过，耗时 2.321s，无本机连接失败日志。
+| 42 | 单元测试隔离：unittest package 模式统一 mock 任务存储/历史/健康探针/重模型客户端；发现 `discover -s tests` 会把 tests 当顶层目录导致 __init__.py 不执行，改为 `-s tests -t .` 后 53 例通过，耗时从 179s 降至 2.321s | tests/__init__.py / PROJECT_STATUS.md |
