@@ -278,3 +278,9 @@
 - 遇到的问题：Windows 控制台输出中文存在编码乱码，但测试断言、耗时字段和失败路径均正常。
 - 下一步：P0-3 仓库基线，执行全量语法检查、干净 clone 构建/启动冒烟、更新状态并打 `v1.0.0-rc.1`。
 | 43 | 最小可观测：节点/全链路耗时持久化与日志，`/ready` 模型加载状态；新增 10 个回归测试，63/63 通过，耗时 2.462s | task_store.py / task_util.py / query_process/base.py / import_process/base.py / query_service.py / health_util.py / bge_*_util.py / tests/test_observability.py |
+### P0-3 仓库基线
+- 改动：仅记录 P0-3 验证结果，不修改生产代码。
+- 验证：主工作区 `compileall knowledge tests batch_import.py` 通过；基于 `HEAD=1ba1cfa` 生成干净仓库后，干净 clone 内 `compileall` 通过、63/63 测试通过（2.508s），查询/导入两个 FastAPI 应用 `/health` 冒烟均返回 200。
+- 遇到的问题：沙箱内外 Windows 用户不同，直接 local clone 被 Git `dubious ownership` 拦截；改用临时 bundle 创建干净 clone，避免修改全局 Git 配置，验证后已清理临时目录。
+- 下一步：打 `v1.0.0-rc.1` 候选标签，然后进入 P1-1 评估集。
+| 44 | P0 基线完成：全量语法检查、干净 clone 测试与双 API `/health` 冒烟通过，准备打 `v1.0.0-rc.1` | PROJECT_STATUS.md |
