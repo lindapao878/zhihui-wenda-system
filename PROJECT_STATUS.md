@@ -308,3 +308,9 @@
 - 遇到的问题：P1-4 首次写入时全文件带行尾空格，用机械清理后恢复干净 diff；Mongo 注册表不可用时不阻塞导入，仅记录 warning 并降级。
 - 下一步：P2 求职化呈现，精简 README 并补 VPS 查询链路、AutoDL 导入链路图和“为什么不用 Celery/Redis/Prometheus/GPU 调度”取舍表。
 | 48 | 内容级去重：SHA-256 注册表优先、file_title 仅作入口；同名不同内容可重导，删除同步注册表；新增 9 个测试，全量 95/95 通过 | document_registry_util.py / file_import_service.py / import_router.py / import_process/state.py / tests/test_content_hash_dedup.py |
+### P2 求职化呈现
+- 改动：README 从 337 行精简到 114 行，保留 10 分钟启动路径、核心架构、面试演示路径、评估方法与报告入口、技术取舍表；新增 VPS 查询链路与 AutoDL 手动导入链路 Mermaid 图。
+- 验证：README 行数验收通过，五类内容齐全，`git diff --check` 通过。
+- 遇到的问题：原 README 仍写着 53 个旧测试与重复上传入口，已同步为 95/95 与内容 hash 409 行为；部署细节保持收敛，不新增服务。
+- 下一步：P1-5 真实评估报告，先检查本机 8001、Milvus、MongoDB、MinIO 可用性，可用才执行评估。
+| 49 | 求职化 README：精简文档、Mermaid 部署链路、面试演示与 Celery/Redis/Prometheus/GPU 取舍表，95/95 测试可复现 | README.md |
