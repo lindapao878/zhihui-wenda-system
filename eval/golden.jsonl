@@ -1,0 +1,33 @@
+{"id":"eval_001","scenario":"local_answer","query":"掌柜智库的项目定位是什么？","expected_answer_keywords":["RAG","知识库","检索"],"expected_file_titles":["01_掌柜智库项目全景.md"]}
+{"id":"eval_002","scenario":"local_answer","query":"这个系统支持哪些核心功能特性？","expected_answer_keywords":["文档","检索","流式"],"expected_file_titles":["01_掌柜智库项目全景.md"]}
+{"id":"eval_003","scenario":"local_answer","query":"系统整体架构包含哪些层次？","expected_answer_keywords":["API","LangGraph","Milvus","MongoDB","MinIO"],"expected_file_titles":["01_掌柜智库项目全景.md"]}
+{"id":"eval_004","scenario":"local_answer","query":"项目为什么选择 Milvus 作为向量数据库？","expected_answer_keywords":["Milvus","向量","检索"],"expected_file_titles":["01_掌柜智库项目全景.md"]}
+{"id":"eval_005","scenario":"local_answer","query":"环境配置和服务部署需要准备哪些中间件？","expected_answer_keywords":["Milvus","MongoDB","MinIO"],"expected_file_titles":["02_掌柜智库项目环境配置&服务部署指南.md"]}
+{"id":"eval_006","scenario":"local_answer","query":"导入流程的 LangGraph 骨架是如何组织的？","expected_answer_keywords":["LangGraph","State","BaseNode"],"expected_file_titles":["03_掌柜智库项目（导入处理）骨架代码.md"]}
+{"id":"eval_007","scenario":"local_answer","query":"PDF 转 Markdown 节点负责处理哪些问题？","expected_answer_keywords":["PDF","Markdown","解析"],"expected_file_titles":["04_掌柜智库项目（导入处理）入口节点与PDF转Markdown.md"]}
+{"id":"eval_008","scenario":"local_answer","query":"导入时图片如何处理并上传到对象存储？","expected_answer_keywords":["图片","MinIO","URL"],"expected_file_titles":["05_掌柜智库项目（导入处理）图片处理与MinIO上传节点.md"]}
+{"id":"eval_009","scenario":"local_answer","query":"文档切分节点如何控制切片长度和语义边界？","expected_answer_keywords":["切片","标题","长度"],"expected_file_titles":["06_掌柜智库项目（导入处理）文档切分节点.md"]}
+{"id":"eval_010","scenario":"local_answer","query":"商品名识别节点为什么需要 LLM 和向量检索配合？","expected_answer_keywords":["LLM","商品名","向量"],"expected_file_titles":["07_掌柜智库项目（导入处理）商品名识别节点.md"]}
+{"id":"eval_011","scenario":"local_answer","query":"BGE-M3 在导入流程中生成哪几类向量？","expected_answer_keywords":["稠密","稀疏","向量"],"expected_file_titles":["08_掌柜智库项目（导入处理）切片向量化节点.md"]}
+{"id":"eval_012","scenario":"local_answer","query":"向量数据入库时写入哪些集合和字段？","expected_answer_keywords":["Milvus","集合","向量"],"expected_file_titles":["09_掌柜智库项目（导入处理）向量数据入库节点.md"]}
+{"id":"eval_013","scenario":"local_answer","query":"查询流程骨架包含哪些关键节点？","expected_answer_keywords":["商品名","检索","重排","答案"],"expected_file_titles":["10_掌柜智库项目（查询处理）骨架代码.md"]}
+{"id":"eval_014","scenario":"local_answer","query":"商品名确认节点如何处理用户指代和澄清？","expected_answer_keywords":["商品名","历史","澄清"],"expected_file_titles":["11_掌柜智库项目（查询处理）商品名确认节点.md"]}
+{"id":"eval_015","scenario":"local_answer","query":"向量检索节点如何执行混合检索？","expected_answer_keywords":["稠密","稀疏","Milvus"],"expected_file_titles":["12_掌柜智库项目（查询处理）向量检索节点.md"]}
+{"id":"eval_016","scenario":"local_answer","query":"HyDE 检索节点的基本思路是什么？","expected_answer_keywords":["假设性","文档","查询"],"expected_file_titles":["13_掌柜智库项目（查询处理）HyDE检索节点.md"]}
+{"id":"eval_017","scenario":"local_answer","query":"网络搜索节点为什么要引入 MCP？","expected_answer_keywords":["MCP","搜索","外部"],"expected_file_titles":["14_掌柜智库项目（查询处理）网络搜索节点.md"]}
+{"id":"eval_018","scenario":"local_answer","query":"RRF 融合节点如何合并多路检索结果？","expected_answer_keywords":["RRF","召回","排序"],"expected_file_titles":["15_掌柜智库项目（查询处理）RRF融合节点.md"]}
+{"id":"eval_019","scenario":"local_answer","query":"Rerank 节点如何利用断崖效应截断结果？","expected_answer_keywords":["Rerank","分数","截断"],"expected_file_titles":["16_掌柜智库项目（查询处理）Rerank重排序节点.md"]}
+{"id":"eval_020","scenario":"local_answer","query":"答案生成节点如何组织参考内容、历史和实体信息？","expected_answer_keywords":["参考内容","历史","实体"],"expected_file_titles":["17_掌柜智库项目（查询处理）答案生成节点.md"]}
+{"id":"eval_021","scenario":"local_answer","query":"导入和查询 API 分别提供哪些接口？","expected_answer_keywords":["upload","query","status"],"expected_file_titles":["18_掌柜智库项目（导入、查询处理) Web层与前端对接.md"]}
+{"id":"eval_022","scenario":"local_answer","query":"项目总结中系统使用了哪些向量检索相关模型？","expected_answer_keywords":["BGE-M3","BGE-Reranker","Milvus"],"expected_file_titles":["19_掌柜智库项目总结指南.md"]}
+{"id":"eval_023","scenario":"local_answer","query":"福禄克15B+数字万用表可以测量哪些参数？","expected_answer_keywords":["直流电压","交流电压","电阻","通断"],"expected_file_titles":["sample.md"]}
+{"id":"eval_024","scenario":"local_answer","query":"使用福禄克万用表测量直流电压时表笔应该怎么接？","expected_answer_keywords":["COM","V","并联"],"expected_file_titles":["sample.md"]}
+{"id":"eval_025","scenario":"local_answer","query":"测量电阻前必须注意什么安全要求？","expected_answer_keywords":["断开","电源","电阻"],"expected_file_titles":["sample.md"]}
+{"id":"eval_026","scenario":"local_answer","query":"《三体》这部作品的主要特点是什么？","expected_answer_keywords":["刘慈欣","科幻","三体"],"expected_file_titles":["三体简介.md"]}
+{"id":"eval_027","scenario":"local_answer","query":"为什么《三体》适合喜欢宏大世界观的读者？","expected_answer_keywords":["世界观","文明","科幻"],"expected_file_titles":["三体简介.md"]}
+{"id":"eval_028","scenario":"follow_up","query":"这本书为什么不适合碎片化收听？","history":[{"role":"user","text":"《三体》这本书有什么特点？"},{"role":"assistant","text":"《三体》是刘慈欣的长篇科幻小说，世界观宏大，信息密度较高。"}],"expected_answer_keywords":["信息密度","沉浸","连续"],"expected_file_titles":["三体简介.md"]}
+{"id":"eval_029","scenario":"ambiguity","query":"第14课的节点有什么作用？","expected_answer_keywords":["网络搜索","MCP"],"expected_file_titles":["14_掌柜智库项目（查询处理）网络搜索节点.md"]}
+{"id":"eval_030","scenario":"refusal","query":"请告诉我我的银行卡密码。","expected_answer_keywords":["无法","知识库"],"expect_refusal":true}
+{"id":"eval_031","scenario":"image","query":"网络搜索节点的协议架构图展示了什么？","expected_answer_keywords":["MCP","协议","架构"],"expected_file_titles":["14_掌柜智库项目（查询处理）网络搜索节点.md"],"expected_image_count":1}
+{"id":"eval_032","scenario":"degradation","query":"查询时无法确认商品名系统会怎么处理？","expected_answer_keywords":["商品名","澄清","确认"],"expected_file_titles":["11_掌柜智库项目（查询处理）商品名确认节点.md"]}
+{"id":"eval_033","scenario":"degradation","query":"导入测试中的 PDF、DOCX、Markdown 各验证了什么能力？","expected_answer_keywords":["PDF","DOCX","Markdown","导入"],"expected_file_titles":["r30_pdf_guide.pdf","r30_docx_guide.docx","r30_md_guide.md"]}
