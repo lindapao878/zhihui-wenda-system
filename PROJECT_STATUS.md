@@ -1,6 +1,6 @@
 # 智慧问答系统 PROJECT_STATUS
 
-> 最后更新: 2026-09-11 (轮次40)
+> 最后更新: 2026-09-11 (轮次41)
 > 用途: 供协调者快速恢复上下文，避免重复扫描项目
 > 日志同步规则: 每完成一项工作就更新本文件，记录做了什么、遇到的问题及解决办法
 
@@ -146,6 +146,8 @@
 | 26 | 移除 answer.prompt 的【图片】指令 | LLM 不主动输出 URL 时无图；图片完全由 _extract_images_from_docs 提供，答案保持纯文字 | prompts/query/answer.prompt / answer_output_node.py |
 | 收尾 | MinIO 直链 403 修复 | 桶为私有且无公开读策略；minio_util 初始化时设置公开只读策略(对齐实现)，重启后直链 200 | knowledge/utils/minio_util.py |
 | 27 | 补齐 Milvus 字符串转义 | 原删除旧切片/商品名过滤只转义 \" 或完全未转义，商品名含 \ \n \t 时 filter 解析失败；新增 escape_milvus_string 统一转义并应用到三处 | knowledge/utils/milvus_string_util.py / import_milvus_node.py / item_name_recognition_node.py / vector_search_node.py |
+| 41 | BGE-M3 sparse深入排查：_to_csr token.isdigit()修复 + sparse_linear全负分析 + HuggingFace重下载模型 + Dockerfile版本锁定 | knowledge/utils/bge_m3_embedding_util.py / requirements.txt / Dockerfile |
+| 40 | 磁盘空间 CPU版torch + sparse_linear权重注入(后证实误判) + docker-compose端口清理 | Dockerfile / bge_m3_embedding_util.py |
 | 28 | 补齐统一日志系统(loguru) | 原各模块仅 logging.getLogger 或 basicConfig，无文件输出；迁移 25 个文件到统一 logger，多行调用 % 风格残留补转 {} 风格，新增 LOG_* 配置与 logs/ 文件输出 | knowledge/utils/logger_util.py / requirements.txt / .env / 25 个日志调用文件 |
 | 29 | 检索与答案质量摸底+调参 | Q3 本地 5 条全被 0.75 阈值滤掉、Q4 Git 被商品名澄清误杀、实体检索对非商品查询输出无关实体；降 MILVUS_MIN_COSINE_SCORE 0.75→0.6、ITEM_NAME_MID_CONFIDENCE 0.6→0.7、实体检索仅商品确认后启用、补 rerank/MCP/商品名日志；4 条查询重测全通过。另：沙箱网络限制致 LLM/MCP Connection error，需外网授权重启 8001 | .env / rerank_node.py / mcp_search_node.py / knowledge_graph_node.py / item_name_confirm_node.py |
 | 30 | 小规模验证 batch_import.py | MD/DOCX/PDF 各 1 文件成功入库，进度文件记录 路径+MD5，断点重跑只处理未完成文件，MD5 去重 3/3 全部跳过；发现极简手写 PDF 不被 MinerU 解析（改用 reportlab 生成标准 PDF 46s 成功）、DOCX 重新生成后二进制 MD5 变化触发重导被 API 409 预检拦截（hash 校准后正常跳过） | batch_import.py / import_progress.txt / temp_data/round30_batch |
@@ -221,8 +223,8 @@
 - AutoDL V100-32GB 实例 Tailscale已通，环境待配
 
 ### 模型
-- BGE-M3: /data/models/bge-m3/ ✅
-- BGE-reranker-large: /data/models/bge-reranker-large/ ❌ 上传中
+- BGE-M3: /data/models/bge-m3/ ✅ 已替换为 HuggingFace 官方模型(pytorch_model.bin)，sparse 验证 PASS
+- BGE-reranker-large: /data/models/bge-reranker-large/ ❌
 
 ### 当前卡点
 1. BGE-reranker-large 未到位
@@ -231,6 +233,7 @@
 4. AutoDL 环境未配置
 
 ### 下一项任务
+0. BGE-M3 已修复 ✅
 1. BGE-reranker-large 上传完成 → 解压
 2. 获取 DNSPod API 凭据 → certbot-dns-dnspod → 拆分证书 → Nginx/DNS 修改
 3. Windows 装 Tailscale → ACL 更新 → 验证 https://import.lyq666.com

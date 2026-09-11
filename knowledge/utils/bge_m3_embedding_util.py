@@ -31,6 +31,8 @@ class _BgeM3EmbeddingWrapper:
             for token, weight in weights.items():
                 if isinstance(token, int):
                     token_id = token
+                elif isinstance(token, str) and token.isdigit():
+                    token_id = int(token)
                 elif isinstance(token, str) and tokenizer is not None:
                     token_id = tokenizer.convert_tokens_to_ids(token)
                 else:
