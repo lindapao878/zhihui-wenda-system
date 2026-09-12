@@ -319,3 +319,8 @@
 - 所需环境：启动查询服务 8001，并确保 Milvus 19530、MongoDB 27017、MinIO 9000 可用且知识库已导入；之后运行 `.venv\Scripts\python.exe eval/run_eval.py --repeat 2 --output eval/reports/eval_report.json`。
 - 下一步：先做最终语法与全量测试回归；由于 P1-5 未完成真实报告，不满足最终验收条件，暂不打 `v1.0.0`。
 | 50 | 真实评估报告阻塞：本机查询服务与三类中间件不可用，未伪造报告；等待服务环境后补跑评估并提交报告 | PROJECT_STATUS.md |
+### 最终回归与 tag 状态
+- 验证：`compileall knowledge tests batch_import.py` 通过；主工作区全量 95/95 通过，耗时 3.960s；bundle 干净 clone 内 `compileall` 通过、全量 95/95 通过，耗时 3.672s；临时验证文件已清理。
+- 状态：P1-5 真实评估报告仍阻塞，未生成假报告，因此不满足“评估报告来自真实查询”的最终验收条件，暂不打 `v1.0.0`。
+- 下一步：启动查询服务与 Milvus/MongoDB/MinIO 后补跑 `eval/run_eval.py --repeat 2`，提交真实报告并打 `v1.0.0`。
+| 51 | 最终回归：主工作区与干净 clone 均 compileall + 95/95 通过；真实评估报告未完成，tag 保留待环境可用 | PROJECT_STATUS.md |
